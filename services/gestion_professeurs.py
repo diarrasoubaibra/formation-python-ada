@@ -18,7 +18,7 @@ def ajouterProfesseur():
     print(f"Professeur {prenom} {nom} ajouté avec succès.")
 
 def listerProfesseurs():
-    professeurs = Professeur.obtenir_professeur()
+    professeurs = Professeur.obtenirProfesseur()
     if professeurs:
         print("Liste des professeurs :")
         for prof in professeurs:

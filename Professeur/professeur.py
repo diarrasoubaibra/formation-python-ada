@@ -1,16 +1,14 @@
+import mysql.connector
 from models.personne import Personne
 from Professeur.ICrudProfesseur import ICRUDProfesseur
 from Professeur.IEducation import IEducation
-
+from base import db
 
 class Professeur(Personne, IEducation, ICRUDProfesseur):
     """
-        Classe représentant un professeur, héritant de Personne et implémentant des interfaces éducatives.
+    Classe représentant un professeur, héritant de Personne et implémentant des interfaces éducatives.
     """
 
-    __professeurs = []
-    
-    # Initialise un nouveau professeur avec ses informations personnelles et ses responsabilités.
     def __init__(self, dateNaissance, ville, prenom, nom, telephone, vacant, matiereEnseigne, prochainCours, sujetProchaineReunion):
         super().__init__(dateNaissance, ville, prenom, nom, telephone)
         self.__vacant = vacant
@@ -18,10 +16,10 @@ class Professeur(Personne, IEducation, ICRUDProfesseur):
         self.__prochainCours = prochainCours
         self.__sujetProchaineReunion = sujetProchaineReunion
 
-    # Retourne une représentation sous forme de chaîne du professeur.
     def __str__(self):
         statut_affiche = "Oui" if self.__vacant else "Non"
-        return f"Professeur n° {self.id} : {self.nom} {self.prenom}, née le {self.date_naissance} à {self.ville}, numéro de téléphone : {self.telephone}, vacant: {statut_affiche}, enseigne {self.__matiereEnseigne}"
+        return (f"Professeur n° {self.get_id} : {self.get_nom} {self.get_prenom}, née le {self.get_date_naissance} à {self.get_ville}, "
+                f"numéro de téléphone : {self.get_telephone}, vacant: {statut_affiche}, enseigne {self.__matiereEnseigne}")
 
     @property 
     def vacant(self):
@@ -51,44 +49,133 @@ class Professeur(Personne, IEducation, ICRUDProfesseur):
     def set_vacant(self, vacant):
         self.__vacant = vacant    
   
-    # Retourne un message indiquant la matière enseignée par le professeur.
     def enseigner(self, matiere):
+        """Retourne un message indiquant la matière enseignée par le professeur."""
         self.__matiereEnseigne = matiere
         return f"Enseigne la matière {self.__matiereEnseigne}"
     
-    # Retourne un message indiquant le sujet du prochain cours à préparer.
     def preparerCours(self, cours):
+        """Retourne un message indiquant le sujet du prochain cours à préparer."""
         self.__prochainCours = cours
         return f"Prépare le contenu d'un cours sur le sujet {self.__prochainCours}"
     
-    # Retourne un message indiquant le sujet de la prochaine réunion à laquelle le professeur doit assister.
     def assisterReunion(self, sujet):
+        """Retourne un message indiquant le sujet de la prochaine réunion à laquelle le professeur doit assister."""
         self.__sujetProchaineReunion = sujet
-        return f"Doit assister à une reunion sur {self.__sujetProchaineReunion}"
+        return f"Doit assister à une réunion sur {self.__sujetProchaineReunion}"
 
     # Implémentation des méthodes CRUD
+    @staticmethod
     def ajouter(professeur):
-        Professeur.__professeurs.append(professeur)
+        """Ajoute un professeur à la base de données."""
+        conn = db.create_connection(database='etab_db')
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO professeurs (id_personne, vacant, matiere_enseigne, prochain_cours, sujet_prochaine_reunion) "
+                    "VALUES (%s, %s, %s, %s, %s)",
+                    (professeur.get_id, professeur.vacant, professeur.matiereEnseigne, professeur.prochainCours, professeur.sujetProchaineReunion)
+                )
+                conn.commit()
+                print(f"Professeur {professeur.get_nom} {professeur.get_prenom} ajouté avec succès.")
+            except mysql.connector.Error as e:
+                print(f"Erreur lors de l'ajout du professeur : {e}")
+                conn.rollback()
+            finally:
+                cursor.close()
+                conn.close()
 
+    @staticmethod
     def modifier(professeur):
-        for index, prof_existe in enumerate(Professeur.__professeurs):
-            if prof_existe.id == professeur.id:
-                Professeur.__professeurs[index] = professeur
-                return True 
-        return False
+        """Modifie les informations d'un professeur dans la base de données."""
+        conn = db.create_connection(database='etab_db')
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE professeurs SET vacant = %s, matiere_enseigne = %s, prochain_cours = %s, sujet_prochaine_reunion = %s "
+                    "WHERE id_personne = %s",
+                    (professeur.vacant, professeur.matiereEnseigne, professeur.prochainCours, professeur.sujetProchaineReunion, professeur.get_id)
+                )
+                conn.commit()
+                print(f"Professeur {professeur.et_nom} {professeur.get_prenom} modifié avec succès.")
+                return cursor.rowcount > 0
+            except mysql.connector.Error as e:
+                print(f"Erreur lors de la modification du professeur : {e}")
+                conn.rollback()
+                return False
+            finally:
+                cursor.close()
+                conn.close()
 
+    @staticmethod
     def supprimer(identifiant):
-        for index, prof in enumerate(Professeur.__professeurs):
-            if prof.id == identifiant:
-                del Professeur.__professeurs[index]
-                return True
-        return False
+        """Supprime un professeur de la base de données."""
+        conn = db.create_connection(database='etab_db')
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM professeurs WHERE id_personne = %s", (identifiant,))
+                conn.commit()
+                print(f"Professeur avec ID {identifiant} supprimé avec succès.")
+                return cursor.rowcount > 0
+            except mysql.connector.Error as e:
+                print(f"Erreur lors de la suppression du professeur : {e}")
+                conn.rollback()
+                return False
+            finally:
+                cursor.close()
+                conn.close()
 
-    def obtenir_professeur():
-        return [str(prof) for prof in Professeur.__professeurs]
+    @staticmethod
+    def obtenirProfesseur():
+        """Récupère tous les professeurs de la base de données."""
+        conn = db.create_connection(database='etab_db')
+        professeurs = []
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT p.id, p.prenom, p.nom, p.date_naissance, p.ville, p.telephone, "
+                    "pr.vacant, pr.matiere_enseigne, pr.prochain_cours, pr.sujet_prochaine_reunion "
+                    "FROM personnes p JOIN professeurs pr ON p.id = pr.id_personne"
+                )
+                for professeur in cursor.fetchall():
+                    professeurs.append(Professeur(
+                        professeur[3], professeur[4], professeur[1], professeur[2], professeur[5],
+                        professeur[6], professeur[7], professeur[8], professeur[9]
+                    ))
+                return professeurs
+            except mysql.connector.Error as e:
+                print(f"Erreur lors de la récupération des professeurs : {e}")
+            finally:
+                cursor.close()
+                conn.close()
+        return professeurs
 
+    @staticmethod
     def obtenir(identifiant):
-        for prof in Professeur.__professeurs:
-            if prof.id == identifiant:
-                return prof
+        """Récupère un professeur par son identifiant."""
+        conn = db.create_connection(database='etab_db')
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT p.id, p.prenom, p.nom, p.date_naissance, p.ville, p.telephone, "
+                    "pr.vacant, pr.matiere_enseigne, pr.prochain_cours, pr.sujet_prochaine_reunion "
+                    "FROM personnes p JOIN professeurs pr ON p.id = pr.id_personne "
+                    "WHERE pr.id_personne = %s", (identifiant,)
+                )
+                professeur = cursor.fetchone()
+                if professeur:
+                    return Professeur(
+                        professeur[3], professeur[4], professeur[1], professeur[2], professeur[5],
+                        professeur[6], professeur[7], professeur[8], professeur[9]
+                    )
+            except mysql.connector.Error as e:
+                print(f"Erreur lors de la récupération du professeur : {e}")
+            finally:
+                cursor.close()
+                conn.close()
         return None
