@@ -18,32 +18,36 @@ def ajouterProfesseur():
     print(f"Professeur {prenom} {nom} ajouté avec succès.")
 
 def listerProfesseurs():
-    professeurs = Professeur.obtenirProfesseur()
+    professeurs = Professeur.obtenirProfesseur()  
     if professeurs:
-        print("Liste des professeurs :")
         for prof in professeurs:
             print(prof)
     else:
-        print("Aucun professeur enregistré.")
+        print("Aucun professeur trouvé.")
+
 
 def modifierProfesseur():
-    identifiant = int(input("Entrez l'identifiant du professeur à modifier : "))
+    identifiant = input("Entrez l'identifiant du professeur à modifier : ")
     professeur = Professeur.obtenir(identifiant)
     if professeur:
-        print(f"Modification du professeur : {professeur}")
-        # Demande des nouvelles informations
-        professeur.set_date_naissance = input("Nouvelle date de naissance (YYYY-MM-DD) : ") or professeur.dateNaissance
-        professeur.set_ville = input("Nouvelle ville : ") or professeur.ville
-        professeur.set_prenom = input("Nouveau prénom : ") or professeur.prenom
-        professeur.set_nom = input("Nouveau nom : ") or professeur.nom
-        professeur.set_telephone = input("Nouveau téléphone : ") or professeur.telephone
-        professeur.set_vacant = input("Est-ce vacant ? (oui/non) : ").lower() == 'oui'
-        professeur.set_matiereEnseigne = input("Nouvelle matière enseignée : ") or professeur.matiereEnseigne
-        professeur.set_prochainCours = input("Nouveau sujet du prochain cours : ") or professeur.prochainCours
-        professeur.set_sujetProchaineReunion = input("Nouveau sujet de la prochaine réunion : ") or professeur.sujetProchaineReunion
-        print(f"Professeur {professeur.prenom} {professeur.nom} modifié avec succès.")
+        # Demande de nouvelles valeurs pour les champs du professeur
+        nouveau_vacant = input("Le professeur est-il vacant ? (Oui/Non) : ").lower() == 'oui'
+        nouvelle_matiere = input("Entrez la nouvelle matière enseignée : ")
+        nouveau_cours = input("Entrez le sujet du prochain cours : ")
+        nouveau_sujet_reunion = input("Entrez le sujet de la prochaine réunion : ")
+        
+        professeur.set_vacant(nouveau_vacant)
+        professeur.set_matiereEnseigne(nouvelle_matiere)
+        professeur.set_prochainCours(nouveau_cours)
+        professeur.set_sujetProchaineReunion(nouveau_sujet_reunion)
+        
+        if Professeur.modifier(professeur):
+            print("Professeur modifié avec succès.")
+        else:
+            print("Échec de la modification du professeur.")
     else:
         print(f"Aucun professeur trouvé avec l'identifiant {identifiant}.")
+
 
 def supprimerProfesseur():
     identifiant = int(input("Entrez l'identifiant du professeur à supprimer : "))

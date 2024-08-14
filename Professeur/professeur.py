@@ -93,13 +93,27 @@ class Professeur(Personne, IEducation, ICRUDProfesseur):
         if conn:
             try:
                 cursor = conn.cursor()
-                cursor.execute(
-                    "UPDATE professeurs SET vacant = %s, matiere_enseigne = %s, prochain_cours = %s, sujet_prochaine_reunion = %s "
-                    "WHERE id_personne = %s",
-                    (professeur.vacant, professeur.matiereEnseigne, professeur.prochainCours, professeur.sujetProchaineReunion, professeur.get_id)
+
+                # Mise à jour des informations dans la table personnes
+                query_personne = (
+                    "UPDATE personnes SET date_naissance = %s, ville = %s, prenom = %s, nom = %s, telephone = %s "
+                    "WHERE id = %s"
                 )
+                cursor.execute(query_personne, (
+                    professeur.get_date_naissance, professeur.get_ville, professeur.get_prenom, professeur.get_nom, professeur.get_telephone, professeur.get_id
+                ))
+
+                # Mise à jour des informations dans la table professeurs
+                query_professeur = (
+                    "UPDATE professeurs SET vacant = %s, matiere_enseigne = %s, prochain_cours = %s, sujet_prochaine_reunion = %s "
+                    "WHERE id_personne = %s"
+                )
+                cursor.execute(query_professeur, (
+                    professeur.vacant, professeur.matiereEnseigne, professeur.prochainCours, professeur.sujetProchaineReunion, professeur.get_id
+                ))
+
                 conn.commit()
-                print(f"Professeur {professeur.et_nom} {professeur.get_prenom} modifié avec succès.")
+                print(f"Professeur {professeur.get_nom} {professeur.get_prenom} modifié avec succès.")
                 return cursor.rowcount > 0
             except mysql.connector.Error as e:
                 print(f"Erreur lors de la modification du professeur : {e}")
@@ -108,6 +122,8 @@ class Professeur(Personne, IEducation, ICRUDProfesseur):
             finally:
                 cursor.close()
                 conn.close()
+        return False
+
 
     @staticmethod
     def supprimer(identifiant):
@@ -168,14 +184,16 @@ class Professeur(Personne, IEducation, ICRUDProfesseur):
                     "WHERE pr.id_personne = %s", (identifiant,)
                 )
                 professeur = cursor.fetchone()
+                # Vérifie si le professeur existe, puis s'assure qu'il n'y a pas d'autres résultats non lus
                 if professeur:
                     return Professeur(
                         professeur[3], professeur[4], professeur[1], professeur[2], professeur[5],
                         professeur[6], professeur[7], professeur[8], professeur[9]
                     )
+                cursor.fetchall()  # Assure que tous les autres résultats sont consommés
             except mysql.connector.Error as e:
                 print(f"Erreur lors de la récupération du professeur : {e}")
             finally:
-                cursor.close()
-                conn.close()
+                cursor.close()  # Ferme le curseur
+                conn.close()  # Ferme la connexion
         return None

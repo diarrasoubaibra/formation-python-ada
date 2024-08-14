@@ -72,24 +72,32 @@ class Eleve(Personne, ICRUDEleve):
 
     @staticmethod
     def modifier(eleve):
+        """Modifie les informations de l'élève et de la personne correspondante dans la base de données."""
         conn = db.create_connection(database='etab_db')
         if conn:
             try:
                 cursor = conn.cursor()
-                query = ("UPDATE eleves SET classe = %s "
-                         "WHERE matricule = %s")
-                cursor.execute(query, (eleve.get_classe, eleve.get_matricule))
+                
+                # Mise à jour des informations dans la table personnes
+                query_personne = ("UPDATE personnes SET date_naissance = %s, ville = %s, prenom = %s, nom = %s, telephone = %s "
+                                  "WHERE id = (SELECT id_personne FROM eleves WHERE matricule = %s)")
+                cursor.execute(query_personne, (eleve.get_date_naissance, eleve.get_ville, eleve.get_prenom, eleve.get_nom, eleve.get_telephone, eleve.get_matricule))
+                
+                # Mise à jour des informations dans la table eleves
+                query_eleve = ("UPDATE eleves SET classe = %s WHERE matricule = %s")
+                cursor.execute(query_eleve, (eleve.get_classe, eleve.get_matricule))
+                
                 conn.commit()
                 print(f"Élève {eleve.get_nom} {eleve.get_prenom} modifié avec succès.")
-                return cursor.rowcount > 0
+                return True
             except mysql.connector.Error as e:
-                print(f"Erreur lors de la modification de l'élève: {e}")
-                if conn:
-                    conn.rollback()
+                print(f"Erreur lors de la modification de l'élève : {e}")
+                conn.rollback()
                 return False
             finally:
                 cursor.close()
                 conn.close()
+        return False
 
 
     @staticmethod

@@ -61,7 +61,7 @@ def main():
 
     if authentification():
         accueil("BIENVENUE DANS L'APPLICATION ETAB v1.3")
-        if menu_principal() == "quit":
+        if menu_principal() == "Quitter":
             quitter(debut)
 
 if __name__ == "__main__":
