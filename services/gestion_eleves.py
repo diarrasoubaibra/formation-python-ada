@@ -79,8 +79,8 @@ def modifierEleve():
                 print("Option invalide. Veuillez réessayer.")
 
         # Sauvegarde des modifications
-        if not Eleve.modifier(eleve):
-            print(f"Erreur lors de la sauvegarde des modifications pour l'élève {eleve.get_nom} {eleve.get_prenom}.")
+        Eleve.modifier(eleve)
+        print(f"Erreur lors de la sauvegarde des modifications pour l'élève {eleve.get_nom} {eleve.get_prenom}.")
     else:
         print(f"Aucun élève trouvé avec le matricule {matricule}.")
 

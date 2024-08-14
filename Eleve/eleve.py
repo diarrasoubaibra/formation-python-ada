@@ -70,23 +70,26 @@ class Eleve(Personne, ICRUDEleve):
                 cursor.close()
                 conn.close()
 
-@staticmethod
-def modifier(eleve):
-    conn = db.create_connection(database='etab_db')
-    if conn:
-        try:
-            with conn.cursor() as cursor:
-                query = "UPDATE eleves SET classe = %s WHERE id_personne = %s"
-                cursor.execute(query, (eleve.get_classe, eleve.get_id))  # Utilisation correcte des propriétés
+    @staticmethod
+    def modifier(eleve):
+        conn = db.create_connection(database='etab_db')
+        if conn:
+            try:
+                cursor = conn.cursor()
+                query = ("UPDATE eleves SET classe = %s "
+                         "WHERE matricule = %s")
+                cursor.execute(query, (eleve.get_classe, eleve.get_matricule))
                 conn.commit()
                 print(f"Élève {eleve.get_nom} {eleve.get_prenom} modifié avec succès.")
                 return cursor.rowcount > 0
-        except mysql.connector.Error as e:
-            print(f"Erreur lors de la modification de l'élève: {e}")
-            conn.rollback()
-            return False
-        finally:
-            conn.close()
+            except mysql.connector.Error as e:
+                print(f"Erreur lors de la modification de l'élève: {e}")
+                if conn:
+                    conn.rollback()
+                return False
+            finally:
+                cursor.close()
+                conn.close()
 
 
     @staticmethod
@@ -134,18 +137,19 @@ def modifier(eleve):
         conn = db.create_connection(database='etab_db')
         if conn:
             try:
-                with conn.cursor() as cursor:
-                    query = ("SELECT p.id, p.prenom, p.nom, p.date_naissance, p.ville, p.telephone, "
-                             "e.classe, e.matricule "
-                             "FROM personnes p JOIN eleves e ON p.id = e.id_personne "
-                             "WHERE e.matricule = %s")
-                    cursor.execute(query, (identifiant,))
-                    eleve = cursor.fetchone()
-                    if eleve:
-                        return Eleve(eleve[3], eleve[4], eleve[1], eleve[2], eleve[5], eleve[6], eleve[7])
-                    return None
+                cursor = conn.cursor()
+                query = ("SELECT p.id, p.prenom, p.nom, p.date_naissance, p.ville, p.telephone, "
+                         "e.classe, e.matricule "
+                         "FROM personnes p JOIN eleves e ON p.id = e.id_personne "
+                         "WHERE e.matricule = %s")
+                cursor.execute(query, (identifiant,))
+                eleve = cursor.fetchone()
+                if eleve:
+                    return Eleve(eleve[3], eleve[4], eleve[1], eleve[2], eleve[5], eleve[6], eleve[7])
+                return None
             except mysql.connector.Error as e:
                 print(f"Erreur lors de la récupération de l'élève: {e}")
                 return None
             finally:
+                cursor.close()
                 conn.close()

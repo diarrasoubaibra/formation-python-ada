@@ -1,131 +1,139 @@
-from models.couleurs import *
 from datetime import datetime
 from base import db
 from base import req_utilisateur
+import bcrypt
 
 class Utilisateur:
     """
-        Classe représentant un utilisateur avec un pseudo et un mot de passe.
+    Classe représentant un utilisateur avec un pseudo et un mot de passe.
     """
-    __idUnique =  0
-    __utilisateurs = []
+    __idUnique = 0
 
-    # Initialisation d'un nouvel utilisateur 
     def __init__(self, pseudo, motDePasse, dateCreation):
+        """
+        Initialise un nouvel utilisateur avec le pseudo, le mot de passe et la date de création.
+        """
         Utilisateur.__idUnique += 1
-        self.__id =  Utilisateur.__idUnique 
-        self.__pseudo = pseudo 
-        self.__motDePasse = motDePasse      
+        self.__id = Utilisateur.__idUnique
+        self.__pseudo = pseudo
+        self.__motDePasse = motDePasse
         self.__dateCreation = dateCreation
-        Utilisateur.__utilisateurs.append(self)  
-    
-    # Retourne une représentation sous forme de chaîne de l'utilisateur. 
+
     def __str__(self):
-        return f"{vert}Utilisateur n0 {self.__id} : {self.__pseudo} crée le {self.__dateCreation}{reset}"
-    
-    # Retourne l'identifiant unique de l'utilisateur
+        """
+        Retourne une représentation sous forme de chaîne de l'utilisateur.
+        """
+        return f"Utilisateur n° {self.__id} : {self.__pseudo} créé le {self.__dateCreation}"
+
     @property
     def id(self):
+        """Retourne l'identifiant unique de l'utilisateur."""
         return self.__id
 
-    # Retourne le pseudo de l'utilisateur
     @property
     def pseudo(self):
-        return self.__pseudo  
-    
-    # Retourne la date de création du compte de l'utilisateur
+        """Retourne le pseudo de l'utilisateur."""
+        return self.__pseudo
+
     @property
     def dateCreation(self):
+        """Retourne la date de création du compte de l'utilisateur."""
         return self.__dateCreation
 
     def nouveauMotDePasse(self, nouveauMotDePasse):
+        """Modifie le mot de passe de l'utilisateur localement."""
         self.__motDePasse = nouveauMotDePasse
 
-    # Vérifie si les identifiants fournis correspondent à ceux de l'utilisateur.      
     def authentification(self, identifiant, motDePasse):
-        if self.__pseudo == identifiant and self.__motDePasse == motDePasse :
-            return True
-        return False
+        """Vérifie si les identifiants fournis correspondent à ceux de l'utilisateur."""
+        return self.__pseudo == identifiant and self.__motDePasse == motDePasse
 
     @classmethod
     def ajouterCompte(cls, pseudo, motDePasse):
         """Ajoute un nouvel utilisateur à la base de données."""
         dateCreation = datetime.now()
         nouvel_utilisateur = cls(pseudo, motDePasse, dateCreation)
-        
-        connection = db.create_connection()
-        if connection and connection.is_connected():
+
+        conn = db.create_connection(database='etab_db')
+        if conn and conn.is_connected():
             try:
-                curseur = connection.cursor()
-                req_utilisateur.ajouter_utilisateur(curseur, pseudo, motDePasse)  # Fonction pour insérer dans la BD
-                connection.commit()
-                nouvel_utilisateur.__id = curseur.lastrowid  # Récupérer l'ID de l'utilisateur créé
-                return f"{vert}Compte créé avec succès !!\n-->Pseudo : {pseudo}{reset}"
+                curseur = conn.cursor()
+                req_utilisateur.ajouter_utilisateur(curseur, pseudo, motDePasse)
+                conn.commit()
+                nouvel_utilisateur.__id = curseur.lastrowid  # Récupère l'ID de l'utilisateur créé
+                return f"Compte créé avec succès !!\n-->Pseudo : {pseudo}"
             except Exception as e:
-                print(f"{rouge}Erreur lors de la création du compte: {e}{reset}")
+                print(f"Erreur lors de la création du compte : {e}")
             finally:
                 curseur.close()
-                connection.close()
-        return f"{rouge}Échec de la connexion à la base de données.{reset}"
+                conn.close()
+        return "Échec de la connexion à la base de données."
 
     def modifierMotDePasse(self, nouveauMotDePasse):
         """Modifie le mot de passe de l'utilisateur dans la base de données."""
         self.__motDePasse = nouveauMotDePasse
-        connection = db.create_connection()
-        if connection and connection.is_connected():
+
+        conn = db.create_connection(database='etab_db')
+        if conn and conn.is_connected():
             try:
-                curseur = connection.cursor()
+                curseur = conn.cursor()
                 req_utilisateur.modifier_mot_de_passe(curseur, self.__pseudo, nouveauMotDePasse)
-                connection.commit()
-                print(f"{vert}Mot de passe modifié pour l'utilisateur {self.__pseudo}.{reset}")
+                conn.commit()
+                print(f"Mot de passe modifié pour l'utilisateur {self.__pseudo}.")
             except Exception as e:
-                print(f"{rouge}Erreur lors de la modification du mot de passe: {e}{reset}")
+                print(f"Erreur lors de la modification du mot de passe : {e}")
             finally:
                 curseur.close()
-                connection.close()
+                conn.close()
 
     @classmethod
     def supprimerCompte(cls, pseudo):
         """Supprime un utilisateur de la base de données."""
-        connection = db.create_connection()
-        if connection and connection.is_connected():
+        conn = db.create_connection(database='etab_db')
+        if conn and conn.is_connected():
             try:
-                curseur = connection.cursor()
-                req_utilisateur.supprimer_utilisateur(curseur, pseudo)  # Fonction pour supprimer de la BD
-                connection.commit()
-                print(f"{vert}Utilisateur {pseudo} supprimé.{reset}")
+                curseur = conn.cursor()
+                req_utilisateur.supprimer_utilisateur(curseur, pseudo)
+                conn.commit()
+                print(f"Utilisateur {pseudo} supprimé.")
             except Exception as e:
-                print(f"{rouge}Erreur lors de la suppression de l'utilisateur: {e}{reset}")
+                print(f"Erreur lors de la suppression de l'utilisateur : {e}")
             finally:
                 curseur.close()
-                connection.close()
+                conn.close()
 
     @classmethod
     def listerUtilisateurs(cls):
         """Liste tous les utilisateurs de la base de données."""
-        connection = db.create_connection()
+        conn = db.create_connection(database='etab_db')
         utilisateurs = []
-        if connection and connection.is_connected():
+        if conn and conn.is_connected():
             try:
-                curseur = connection.cursor()
-                utilisateurs_db = req_utilisateur.lister_utilisateurs(curseur)  # Fonction pour lister les utilisateurs
+                curseur = conn.cursor()
+                utilisateurs_db = req_utilisateur.lister_utilisateurs(curseur)
                 for user in utilisateurs_db:
-                    print(f"ID: {user[0]}, Pseudo: {user[1]}, Date de création: {user[2]}")
-                return utilisateurs
+                    print(f"ID : {user[0]}, Pseudo : {user[1]}, Date de création : {user[2]}")
+                    utilisateurs.append(user)  # Ajoute à la liste des utilisateurs
             except Exception as e:
-                print(f"{rouge}Erreur lors de la récupération des utilisateurs: {e}{reset}")
+                print(f"Erreur lors de la récupération des utilisateurs : {e}")
             finally:
                 curseur.close()
-                connection.close()
+                conn.close()
         return utilisateurs
 
     @classmethod
     def recuperer_utilisateur(cls, pseudo):
-        connection = db.create_connection()
-        if connection:
-            cursor = connection.cursor()
-            result = req_utilisateur.recuperer_utilisateur(cursor, pseudo)
-            connection.close()
-            if result:
-                return cls(result[0], result[1], result[2]) 
+        """Récupère un utilisateur de la base de données par son pseudo."""
+        conn = db.create_connection(database='etab_db')
+        if conn and conn.is_connected():
+            try:
+                cursor = conn.cursor()
+                result = req_utilisateur.recuperer_utilisateur(cursor, pseudo)
+                if result:
+                    return cls(result[0], result[1], result[2])
+            except Exception as e:
+                print(f"Erreur lors de la récupération de l'utilisateur : {e}")
+            finally:
+                cursor.close()
+                conn.close()
         return None

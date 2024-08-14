@@ -1,15 +1,15 @@
+# Fonctions de gestion des utilisateurs
 import time
-import bcrypt
-from datetime import datetime
 from menus import afficherSousMenuUtil, accueil
 from models.utilisateur import Utilisateur
+import bcrypt
 
 def ajouterUtilisateur():
     pseudo = input("Entrez le pseudo : ")
     motDePasse = input("Entrez le mot de passe : ")
     hash_mdp = bcrypt.hashpw(motDePasse.encode('utf-8'), bcrypt.gensalt())
-    message = Utilisateur.ajouterCompte(pseudo, hash_mdp)  # Pas besoin de dateCreation
-    print(message)
+    utilisateur = Utilisateur.ajouterCompte(pseudo, hash_mdp)  # Pas besoin de dateCreation
+    print(utilisateur)
 
 def supprimerUtilisateur():
     pseudo = input("Entrez le pseudo de l'utilisateur à supprimer : ")
@@ -33,9 +33,9 @@ def gestionUtilisateurs():
     while True:
         afficherSousMenuUtil()
         try:
-            choix = int(input("\033[0;37mChoisissez une option dans le menu : \033[0m"))
+            choix = int(input("Choisissez une option dans le menu : "))
         except ValueError:
-            print('\033[0;93mVous devez entrer un chiffre du menu !!\033[0m')
+            print('Vous devez entrer un chiffre du menu !!')
             time.sleep(0.5)
             continue
 
@@ -53,6 +53,6 @@ def gestionUtilisateurs():
             case 0:
                 return                   
             case _:
-                print("\033[0;93mOption invalide, veuillez réessayer !!\033[0m")
+                print("Option invalide, veuillez réessayer !!")
                 time.sleep(0.5)
                 continue
